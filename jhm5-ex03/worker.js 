@@ -1,0 +1,101 @@
+<// Declare KV namespace, needs to be configured in Cloudflare dashboard
+declare global {
+  const TODO_STORAGE: KVNamespace;
+}
+
+// Handle static file requests
+async function handleStaticFile(path: string): Promise<Response> {
+  // Default page
+  if (path === '/' || path === '') {
+    path = '/advanced-todo.html'; // Set advanced app as default page
+  }
+  
+  // Read requested file from GitHub repository
+  const fileUrl = `https://raw.githubusercontent.com/rexyue028032/jhm5-ex03/main/public${path}`;
+  const response = await fetch(fileUrl);
+  
+  if (!response.ok) {
+    return new Response('File not found', { status: 404 });
+  }
+  
+  // Set appropriate MIME type
+  let contentType = 'text/plain';
+  if (path.endsWith('.html')) contentType = 'text/html';
+  if (path.endsWith('.css')) contentType = 'text/css';
+  if (path.endsWith('.js')) contentType = 'application/javascript';
+  
+  return new Response(await response.text(), {
+    headers: {
+      'Content-Type': contentType,
+      'Access-Control-Allow-Origin': '*'
+    }
+  });
+}
+
+// Handle API requests
+async function handleApiRequest(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  
+  // Handle task GET/POST requests (supports both old and new versions)
+  if (url.pathname === '/api/todos' || url.pathname === '/api/tasks') {
+    if (request.method === 'GET') {
+      // Get data from KV
+      const data = await TODO_STORAGE.get('tasks');
+      return new Response(JSON.stringify({
+        todos: data ? JSON.parse(data) : [],  // For compatibility with old version
+        tasks: data ? JSON.parse(data) : []   // For new version
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    } else if (request.method === 'POST') {
+      // Save data to KV
+      const body = await request.json();
+      // Support data from both old (todos) and new (tasks) requests
+      const tasks = body.tasks || body.todos || [];
+      await TODO_STORAGE.put('tasks', JSON.stringify(tasks));
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Data saved successfully'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+  }
+  
+  return new Response('API path does not exist', { status: 404 });
+}
+
+// Main request handling function
+async function handleRequest(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  
+  // Handle CORS preflight requests
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
+    });
+  }
+  
+  // Handle API requests
+  if (url.pathname.startsWith('/api/')) {
+    return handleApiRequest(request);
+  }
+  
+  // Handle static file requests
+  return handleStaticFile(url.pathname);
+}
+
+// Listen for requests
+addEventListener('fetch', (event) => {
+  event.respondWith(handleRequest(event.request));
+});

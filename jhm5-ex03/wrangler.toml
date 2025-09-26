@@ -1,0 +1,9 @@
+name = "TODO_STORAGE"
+main = "worker.js"         
+compatibility_date = "2025-09-27"  
+
+[[
+kv_namespaces
+]]
+binding = "TODO_STORAGE"
+id = "3b0846691a354031a04e61db77b9205d" 
