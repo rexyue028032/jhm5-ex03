@@ -759,6 +759,22 @@
                 }
             });
         });
+        async function fetchTodos() {
+  try {
+    const response = await fetch('/api/todos', { // 确保路径是 /api/todos
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) throw new Error('API 响应失败');
+    const data = await response.json();
+    todos = data.todos || [];
+    renderTodos();
+  } catch (err) {
+    console.error('加载待办事项失败：', err);
+    // 可选：添加前端提示
+    alert('Failed to load todos. Check console for details.');
+  }
+}
     </script>
 </body>
 </html>

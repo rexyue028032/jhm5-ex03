@@ -7,7 +7,7 @@ declare global {
 async function handleStaticFile(path: string): Promise<Response> {
   // Default page
   if (path === '/' || path === '') {
-    path = '/advanced-todo.html'; // Set advanced app as default page
+    path = '/todo2.html'; // Set advanced app as default page
   }
   
   // Read requested file from GitHub repository
@@ -99,3 +99,18 @@ async function handleRequest(request: Request): Promise<Response> {
 addEventListener('fetch', (event) => {
   event.respondWith(handleRequest(event.request));
 });
+async function handleStaticFile(path) {
+  // 强制默认打开 todo2.html
+  if (path === '/' || path === '') {
+    path = '/todo2.html'; 
+  }
+  // 后续文件读取逻辑...
+}
+// 在 handleApiRequest 中添加测试路由
+if (url.pathname === '/api/test-kv') {
+  await TODO_STORAGE.put('test', 'hello from KV');
+  const testData = await TODO_STORAGE.get('test');
+  return new Response(`KV test: ${testData}`, {
+    headers: { 'Content-Type': 'text/plain' }
+  });
+}
