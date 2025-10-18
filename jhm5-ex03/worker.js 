@@ -114,3 +114,60 @@ if (url.pathname === '/api/test-kv') {
     headers: { 'Content-Type': 'text/plain' }
   });
 }
+// worker.js
+declare global {
+  const TODO_STORAGE: KVNamespace; // 绑定唯一的 KV 命名空间
+}
+
+// 处理 GET 请求：返回 KV 中最新的待办数据
+async function handleGetTodos() {
+  const todos = await TODO_STORAGE.get('todos');
+  return new Response(JSON.stringify({
+    success: true,
+    todos: todos ? JSON.parse(todos) : []
+  }), {
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+  });
+}
+
+// 处理 POST 请求：保存最新数据到 KV
+async function handleSaveTodos(request) {
+  const { todos } = await request.json();
+  await TODO_STORAGE.put('todos', JSON.stringify(todos)); // 覆盖旧数据，确保最新
+  return new Response(JSON.stringify({ success: true }), {
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+  });
+}
+
+// 主请求处理
+async function handleRequest(request) {
+  const url = new URL(request.url);
+  
+  // 允许跨域（不同网站/浏览器都能访问）
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
+    });
+  }
+  
+  // 处理待办数据的 GET/POST 请求
+  if (url.pathname === '/api/todos') {
+    if (request.method === 'GET') return handleGetTodos();
+    if (request.method === 'POST') return handleSaveTodos(request);
+  }
+  
+  return new Response('Not found', { status: 404 });
+}
+
+addEventListener('fetch', (event) => {
+  event.respondWith(handleRequest(event.request));
+});
+const headers = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type'
+};

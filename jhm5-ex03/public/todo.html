@@ -775,6 +775,50 @@
     alert('Failed to load todos. Check console for details.');
   }
 }
-    </script>
+// 1. 页面加载时立即拉取最新数据
+async function init() {
+  await fetchLatestTodos(); // 优先从 KV 加载最新数据
+  renderAllTasks();
+  renderCalendar();
+  
+  // 定时同步（每3秒拉取一次最新数据，确保多设备同步）
+  setInterval(fetchLatestTodos, 3000); 
+}
+
+// 2. 从 KV 拉取最新数据
+async function fetchLatestTodos() {
+  try {
+    const response = await fetch('/api/todos', { method: 'GET' });
+    const data = await response.json();
+    if (data.success && data.todos) {
+      // 仅当数据有变化时才重新渲染（避免不必要的刷新）
+      if (JSON.stringify(tasks) !== JSON.stringify(data.todos)) {
+        tasks = data.todos;
+        renderAllTasks(); // 更新界面
+        showStatus('Data synchronized');
+      }
+    }
+  } catch (error) {
+    console.error('Failed to sync data:', error);
+  }
+}
+
+// 3. 所有数据修改操作后立即同步到 KV
+async function saveTasks() {
+  try {
+    const response = await fetch('/api/todos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ todos: tasks })
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error('Sync failed');
+  } catch (error) {
+    console.error('Failed to save to KV:', error);
+  }
+}
+
+
+</script>
 </body>
 </html>
