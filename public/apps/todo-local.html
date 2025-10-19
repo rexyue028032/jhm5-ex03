@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>本地待辦</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>.list{margin-top:12px}.item{display:flex;justify-content:space-between;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px}</style>
+</head>
+<body>
+  <main class="container">
+    <h2>本地待辦（LocalStorage）</h2>
+    <div class="app">
+      <div class="row">
+        <input id="text" placeholder="新增待辦」" style="flex:1;padding:8px;border-radius:8px;border:0;background:rgba(255,255,255,0.03);color:var(--text)">
+        <button id="add">新增</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <select id="filter"><option value="all">全部</option><option value="active">進行中</option><option value="done">已完成</option></select>
+      </div>
+      <div id="list" class="list"></div>
+    </div>
+  </main>
+  <script>
+    const KEY='jhm5-ex03-todo-local'
+    let items = JSON.parse(localStorage.getItem(KEY)||'[]')
+    const listEl=document.getElementById('list')
+    const textEl=document.getElementById('text')
+    const addBtn=document.getElementById('add')
+    const filterEl=document.getElementById('filter')
+
+    function save(){ localStorage.setItem(KEY, JSON.stringify(items)); render() }
+    function add(){ if(!textEl.value.trim()) return; items.push({id:Date.now().toString(36),text:textEl.value.trim(),done:false}); textEl.value=''; save() }
+    function toggle(id){ items = items.map(i=> i.id===id?{...i,done:!i.done}:i); save() }
+    function remove(id){ items = items.filter(i=>i.id!==id); save() }
+    function edit(id){ const t=prompt('編輯', items.find(i=>i.id===id).text); if(t!=null){ items=items.map(i=>i.id===id?{...i,text:t}:i); save() } }
+
+    function render(){
+      const f = filterEl.value
+      listEl.innerHTML = ''
+      items.filter(i=> f==='all' || (f==='done'&&i.done) || (f==='active'&&!i.done)).forEach(i=>{
+        const el = document.createElement('div'); el.className='item'
+        el.innerHTML = `<div><input type="checkbox" ${i.done?'checked':''} onchange="void(0)"> <span style="margin-left:8px">${i.text}</span></div><div><button data-id="${i.id}" class="edit">編輯</button> <button data-id="${i.id}" class="del">刪除</button></div>`
+        listEl.appendChild(el)
+        el.querySelector('input').addEventListener('change', ()=>toggle(i.id))
+        el.querySelector('.del').addEventListener('click', ()=>remove(i.id))
+        el.querySelector('.edit').addEventListener('click', ()=>edit(i.id))
+      })
+    }
+
+    addBtn.onclick = add
+    filterEl.onchange = render
+    render()
+  </script>
+</body>
+</html>

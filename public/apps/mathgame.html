@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>限時數學遊戲</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>.controls{display:flex;gap:8px;align-items:center}.question{font-size:24px;margin-top:12px}.score{margin-top:8px}</style>
+</head>
+<body>
+  <main class="container">
+    <h2>限時數學遊戲</h2>
+    <div class="app">
+      <div class="controls">
+        <select id="level"><option value="easy">簡單</option><option value="medium">中等</option><option value="hard">困難</option></select>
+        <button id="start">開始</button>
+      </div>
+      <div id="timer" class="muted">時間：0</div>
+      <div id="question" class="question"></div>
+      <input id="answer" placeholder="輸入答案" style="padding:8px;border-radius:8px;border:0;background:rgba(255,255,255,0.03);color:var(--text)">
+      <div class="score" id="score">分數：0</div>
+      <div style="margin-top:12px"><input id="name" placeholder="玩家名稱"> <button id="submitScore">送出分數</button></div>
+      <h3>排行榜</h3>
+      <ol id="leaderboard"></ol>
+    </div>
+  </main>
+  <script>
+    const API_LEADER = '/api/mathgame/leaderboard'
+    const API_SCORE = '/api/mathgame/score'
+    let timeLeft=0, timerId=null, score=0, level='easy', current=null
+
+    function genQuestion(level){
+      if(level==='easy'){ const a=rand(1,10), b=rand(1,10); return {q:`${a} + ${b}`, ans: a+b}}
+      if(level==='medium'){ const a=rand(1,20), b=rand(1,20); return {q:`${a} × ${b}`, ans: a*b}}
+      const a=rand(2,12), b=rand(2,12); return {q:`${a} × ${b} + ${rand(1,20)}`, ans: a*b + rand(1,20)}
+    }
+    function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a }
+
+    const timerEl=document.getElementById('timer'), qEl=document.getElementById('question'), ansEl=document.getElementById('answer'), scoreEl=document.getElementById('score'), startBtn=document.getElementById('start')
+
+    function start(){ level=document.getElementById('level').value; score=0; timeLeft=30; next(); timerId=setInterval(()=>{ timeLeft--; timerEl.textContent=`時間：${timeLeft}`; if(timeLeft<=0){ clearInterval(timerId); endGame() } },1000) }
+    function next(){ current=genQuestion(level); qEl.textContent=current.q; ansEl.value=''; }
+    ansEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ if(Number(ansEl.value)===current.ans){ score+=1; scoreEl.textContent='分數：'+score; timeLeft+=2 } next() } })
+    function endGame(){ qEl.textContent='遊戲結束'; fetch(API_SCORE,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:document.getElementById('name').value||'匿名',score})}); loadLeader() }
+    startBtn.onclick=start
+
+    async function loadLeader(){ const res=await fetch(API_LEADER); const list=await res.json(); const lb=document.getElementById('leaderboard'); lb.innerHTML=''; list.slice(0,10).forEach(i=>{ const li=document.createElement('li'); li.textContent=`${i.name} — ${i.score}`; lb.appendChild(li) }) }
+    document.getElementById('submitScore').onclick = async ()=>{ await fetch(API_SCORE,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:document.getElementById('name').value||'匿名',score})}); loadLeader() }
+    loadLeader()
+  </script>
+</body>
+</html>

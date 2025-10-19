@@ -1,3 +1,29 @@
-# jhm5-ex03 
+# jhm5-ex03
 
-https://fictional-lamp-wrg6vq5w5qgj39wx6-8976.app.github.dev/oauth/callback?code=BpS6xZyPIGq7LCYpD1_xKhT0Od1kG2ZW3cWaTqGNwBE.QMVrsOSdJ409j8fsqQ2hnI5O42KlxeHZ1ex6MLYNZCo&scope=account%3Aread%20user%3Aread%20workers%3Awrite%20workers_kv%3Awrite%20workers_routes%3Awrite%20workers_scripts%3Awrite%20workers_tail%3Aread%20d1%3Awrite%20pages%3Awrite%20zone%3Aread%20ssl_certs%3Awrite%20ai%3Awrite%20queues%3Awrite%20pipelines%3Awrite%20secrets_store%3Awrite%20containers%3Awrite%20cloudchamber%3Awrite%20connectivity%3Aadmin%20offline_access&state=-udbWI4wygM~Wb6FT3Wxqfc5w3VF-o-3
+Cloudflare Worker 專案示範，內含四個小型應用：井字遊戲、Local Todo、Cloud Todo（KV）、限時數學遊戲（排行榜）。
+
+快速啟動：
+
+1. 安裝依賴：
+
+```bash
+npm install
+```
+
+2. 本地開發（需要 wrangler 已安裝）：
+
+```bash
+npx wrangler dev
+```
+
+3. 部署：
+
+```bash
+npx wrangler publish
+```
+
+注意事項：
+
+- 本範例使用簡潔、極簡風格的前端實作，目的是示範功能與整合方式。
+- 請在 wrangler 設定中把 KV namespace 的 id 與 preview_id 填入，binding 名稱為 jhm5-ex03 規範下的 JHM5_EX03_TODO。
+# jhm5-ex03 

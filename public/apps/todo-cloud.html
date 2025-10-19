@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>雲端待辦</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>.list{margin-top:12px}.item{display:flex;justify-content:space-between;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px}</style>
+</head>
+<body>
+  <main class="container">
+    <h2>雲端待辦（Cloud KV）</h2>
+    <div class="app">
+      <div class="row">
+        <input id="user" placeholder="使用者名稱（例：alice）" style="flex:1;padding:8px;border-radius:8px;border:0;background:rgba(255,255,255,0.03);color:var(--text)">
+        <button id="load">載入</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="text" placeholder="新增雲端待辦" style="flex:1;padding:8px;border-radius:8px;border:0;background:rgba(255,255,255,0.03);color:var(--text)">
+        <button id="add">新增</button>
+      </div>
+      <div id="list" class="list"></div>
+    </div>
+  </main>
+  <script>
+    const API_BASE = '/api/todo-cloud'
+    let user=''
+    const userEl=document.getElementById('user')
+    const loadBtn=document.getElementById('load')
+    const addBtn=document.getElementById('add')
+    const textEl=document.getElementById('text')
+    const listEl=document.getElementById('list')
+
+    async function load(){ user = userEl.value.trim() || 'anonymous'; const res = await fetch(`${API_BASE}?user=${user}`); const items = await res.json(); render(items) }
+    async function add(){ if(!textEl.value.trim()) return; await fetch(`${API_BASE}?user=${user}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text:textEl.value.trim()})}); textEl.value=''; load() }
+    async function toggle(id,done){ await fetch(`${API_BASE}/${id}?user=${user}`,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({done:!done})}); load() }
+    async function del(id){ await fetch(`${API_BASE}/${id}?user=${user}`,{method:'DELETE'}); load() }
+
+    function render(items){ listEl.innerHTML=''; items.forEach(i=>{ const el=document.createElement('div'); el.className='item'; el.innerHTML=`<div><input type="checkbox" ${i.done?'checked':''}> <span style="margin-left:8px">${i.text}</span></div><div><button data-id="${i.id}" class="del">刪除</button></div>`; listEl.appendChild(el); el.querySelector('input').addEventListener('change', ()=>toggle(i.id,i.done)); el.querySelector('.del').addEventListener('click', ()=>del(i.id)); }) }
+
+    loadBtn.onclick = load
+    addBtn.onclick = add
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "jhm5-ex03",
+  "version": "0.1.0",
+  "description": "Cloudflare Worker 專案，提供靜態資源、API 與 KV 儲存（繁體中文介面）",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler publish"
+  },
+  "devDependencies": {
+    "wrangler": "^3.23.0",
+    "typescript": "^5.0.0"
+  }
+}

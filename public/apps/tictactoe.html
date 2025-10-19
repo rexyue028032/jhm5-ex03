@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>井字遊戲</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .board{display:grid;grid-template-columns:repeat(3,100px);gap:8px;margin:20px 0}
+    .cell{width:100px;height:100px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-size:40px;border-radius:8px;cursor:pointer}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h2>井字遊戲</h2>
+    <div class="app">
+      <div class="controls">
+        <button id="modeBtn">模式：單人（AI）</button>
+        <button id="resetBtn">重置</button>
+      </div>
+      <div id="status" class="muted">輪到 X</div>
+      <div id="board" class="board"></div>
+    </div>
+  </main>
+  <script>
+    // 簡潔的井字遊戲，包含 Minimax AI 與 LocalStorage 儲存
+    const STORAGE_KEY = 'jhm5-ex03-tictactoe'
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || {board:Array(9).fill(null), turn:'X', mode:'ai'}
+
+    const boardEl = document.getElementById('board')
+    const statusEl = document.getElementById('status')
+    const modeBtn = document.getElementById('modeBtn')
+    const resetBtn = document.getElementById('resetBtn')
+
+    function render(){
+      boardEl.innerHTML = ''
+      state.board.forEach((v,i)=>{
+        const c = document.createElement('div')
+        c.className='cell'
+        c.textContent = v||''
+        c.onclick = ()=>play(i)
+        boardEl.appendChild(c)
+      })
+      statusEl.textContent = checkWinner(state.board) ? '遊戲結束' : `輪到 ${state.turn}`
+      modeBtn.textContent = `模式：${state.mode==='ai'?'單人（AI）':'雙人'}`
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    }
+
+    function play(i){
+      if(state.board[i] || checkWinner(state.board)) return
+      state.board[i]=state.turn
+      state.turn = state.turn==='X'?'O':'X'
+      render()
+      if(state.mode==='ai' && state.turn==='O' && !checkWinner(state.board)){
+        const aiMove = minimaxBest(state.board,'O')
+        state.board[aiMove]= 'O'
+        state.turn='X'
+        render()
+      }
+    }
+
+    function reset(){ state={board:Array(9).fill(null), turn:'X', mode:state.mode}; render() }
+    function toggleMode(){ state.mode = state.mode==='ai'?'pvp':'ai'; render() }
+    resetBtn.onclick = reset
+    modeBtn.onclick = toggleMode
+
+    function checkWinner(b){
+      const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
+      for(const [a,b1,c] of lines){ if(b[a] && b[a]===b[b1] && b[a]===b[c]) return b[a] }
+      if(b.every(Boolean)) return 'draw'
+      return null
+    }
+
+    function minimaxBest(board, player){
+      const opponent = player==='X'?'O':'X'
+      const winner = checkWinner(board)
+      if(winner) return null
+
+      function minimax(b, p){
+        const w = checkWinner(b)
+        if(w==='O') return {score: 1}
+        if(w==='X') return {score: -1}
+        if(w==='draw') return {score: 0}
+        const moves=[]
+        for(let i=0;i<9;i++){
+          if(!b[i]){
+            b[i]=p
+            const res = minimax(b, p==='O'?'X':'O')
+            moves.push({i, score: res.score})
+            b[i]=null
+          }
+        }
+        return p==='O' ? moves.reduce((a,c)=>c.score>a.score?c:a) : moves.reduce((a,c)=>c.score<a.score?c:a)
+      }
+
+      const best = minimax(board.slice(), player)
+      return best ? best.i : board.findIndex(x=>!x)
+    }
+
+    render()
+  </script>
+</body>
+</html>
